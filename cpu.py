@@ -1,10 +1,11 @@
+import os
 import ssl
 import subprocess
 import time
 from smtplib import SMTP_SSL
-
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from dotenv import load_dotenv
 
 TEMP_THRESHOLD = 70
 
@@ -25,8 +26,8 @@ def create_mail_message_mime(from_email, to_email, message, subject, filepath=No
     return msg
 
 def send_email(msg):
-    account = "             @gmail.com"  # Your Gmail address
-    password = "                  "   # Your Gmail password
+    account = os.getenv('EMAIL_ACCOUNT')
+    password = os.getenv('EMAIL_PASSWORD')
 
     host = 'smtp.gmail.com'
     port = 465
@@ -41,22 +42,18 @@ def send_email(msg):
     server.quit()
 
 def main():
+    load_dotenv()
     temp = get_cpu_temperature()
     if temp >= TEMP_THRESHOLD:
-        # メールの送り主
-        from_email = "                          " 
-
-        # メール送信先
-        to_email = "                             " 
-
+        from_email = os.getenv('EMAIL_ACCOUNT')
+        to_emails = os.getenv('TO_EMAILS').split(',')
         subject = "[警告!]サーバーの温度異常"
         message = f"自宅サーバーのCPU温度が{temp}度です."
-
-        # MIME形式の作成
-        mime = create_mail_message_mime(from_email, to_email, message, subject)
-
-        # メールの送信
-        send_email(mime)
+        for to_email in to_emails:
+            # MIME形式の作成
+            mime = create_mail_message_mime(from_email, to_email, message, subject)     
+            # メールの送信
+            send_email(mime)
     
 if __name__ == "__main__":
     main()
